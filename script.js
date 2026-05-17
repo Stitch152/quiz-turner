@@ -1,11 +1,13 @@
 // Inicialização Firebase compatível para HTML puro
-let db;
+let db; // declarado uma única vez
+
 if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
     if (firebase.apps.length === 0) {
         firebase.initializeApp(firebaseConfig);
     }
-    db = firebase.firestore();
+    db = firebase.firestore(); // atribuição
 }
+
 
 // Questões do quiz
 const questions = [
