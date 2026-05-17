@@ -1,15 +1,15 @@
-// Inicialização Firebase compatível para HTML puro
-let db; // declarado uma única vez
+// Dados do quiz
+// Requer: firebase-config.js com firebaseConfig válido
+// Firebase SDK já incluído em index.html
 
+// Inicialização Firebase compatível para HTML puro
+let db;
 if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
     if (firebase.apps.length === 0) {
         firebase.initializeApp(firebaseConfig);
     }
-    db = firebase.firestore(); // atribuição
+    db = firebase.firestore();
 }
-
-
-// Questões do quiz
 const questions = [
     {
         text: 'Qual é o cariótipo característico da Síndrome de Turner?',
@@ -63,7 +63,6 @@ const questions = [
     }
 ];
 
-// Dificuldades
 const difficulties = {
     easy: { label: 'Fácil', class: 'difficulty-easy' },
     medium: { label: 'Média', class: 'difficulty-medium' },
@@ -72,7 +71,6 @@ const difficulties = {
 
 const PASSWORD = '140159';
 
-// Estado inicial
 let state = {
     screen: 'home',
     name: '',
@@ -82,7 +80,6 @@ let state = {
     finished: false
 };
 
-// Funções de renderização
 function render() {
     const app = document.getElementById('app');
     if (state.screen === 'home') {
@@ -121,7 +118,6 @@ function render() {
     }
 }
 
-// Navegação
 function goHome() {
     state = { screen: 'home', name: '', current: 0, score: 0, correct: 0, finished: false };
     render();
@@ -147,17 +143,16 @@ function submitName() {
     render();
 }
 
-// Quiz
 function renderQuiz() {
     const q = questions[state.current];
     const diff = difficulties[q.difficulty];
     const progress = ((state.current) / questions.length) * 100;
     let optionsHtml = '';
     q.options.forEach((opt, i) => {
-        optionsHtml += `<div class="option" id="opt${i}" onclick="selectOption(${i})">
-            ${String.fromCharCode(65+i)}) ${opt}
-        </div>`;
-    });
+  optionsHtml += `<div class="option" id="opt${i}" onclick="selectOption(${i})">
+    ${String.fromCharCode(65+i)}) ${opt}
+  </div>`;
+});
     document.getElementById('app').innerHTML = `
         <div class="progress-bar"><div class="progress" style="width:${progress}%;"></div></div>
         <div class="question">${q.text}</div>
@@ -210,7 +205,6 @@ function nextQuestion() {
     render();
 }
 
-// Resultado
 function renderResult() {
     const percent = Math.round((state.score / 8) * 100);
     let performance = '';
@@ -231,7 +225,7 @@ function renderResult() {
     saveRanking();
 }
 
-// Ranking
+// Salva tentativa no Firestore
 function saveRanking() {
     if (!db) return;
     db.collection('turner_ranking').add({
@@ -241,3 +235,60 @@ function saveRanking() {
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 }
+
+function showRankingLogin() {
+    state.screen = 'ranking-login';
+    render();
+}
+
+function submitPassword() {
+    const pass = document.getElementById('inputPass').value;
+    if (pass === PASSWORD) {
+        state.screen = 'ranking';
+        render();
+    } else {
+        const feedback = document.getElementById('passFeedback');
+        feedback.style.display = 'block';
+        feedback.innerText = 'Senha incorreta.';
+        document.getElementById('inputPass').style.border = '2px solid #ef4444';
+    }
+}
+
+// Ranking global em tempo real
+let unsubscribeRanking = null;
+function renderRanking() {
+    document.getElementById('app').innerHTML = `
+        <div class="title">Ranking</div>
+        <div id="ranking-loading" style="text-align:center; margin:18px;">Carregando ranking...</div>
+        <table class="ranking-table" style="display:none;">
+            <thead><tr><th>#</th><th>Nome</th><th>Pontuação</th><th>Acertos</th></tr></thead>
+            <tbody id="ranking-body"></tbody>
+        </table>
+        <button class="btn" onclick="goHome()">Voltar ao Início</button>
+    `;
+    // Atualização em tempo real
+    if (unsubscribeRanking) unsubscribeRanking();
+    unsubscribeRanking = db.collection('turner_ranking')
+        .orderBy('score', 'desc')
+        .orderBy('correct', 'desc')
+        .orderBy('timestamp', 'asc')
+        .onSnapshot(snapshot => {
+            const rows = [];
+            let i = 1;
+            snapshot.forEach(doc => {
+                const r = doc.data();
+                rows.push(`<tr><td>${i++}</td><td>${r.name}</td><td>${r.score}</td><td>${r.correct}</td></tr>`);
+            });
+            const loading = document.getElementById('ranking-loading');
+            const table = document.querySelector('.ranking-table');
+            const body = document.getElementById('ranking-body');
+            if (loading) loading.style.display = 'none';
+            if (table) table.style.display = 'table';
+            if (body) body.innerHTML = rows.join('');
+        });
+}
+
+// Inicialização
+window.addEventListener('DOMContentLoaded', () => {
+    render();
+});
