@@ -11,12 +11,11 @@
     <div class="loading-msg">Carregando...</div>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
-  <!-- Configuração do Firebase (copie seu firebaseConfig aqui) -->
-  <script src="firebase-config.js"></script>
-  <!-- Script principal -->
-  <script src="script.js"></script>
+  <!--
+    Usando Firebase Modular SDK v12 (type="module").
+    NÃO use as tags antigas firebase-app-compat.js aqui.
+    Tudo é importado diretamente em script.js.
+  -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
