@@ -277,10 +277,12 @@ function renderRanking() {
                 const r = doc.data();
                 rows.push(`<tr><td>${i++}</td><td>${r.name}</td><td>${r.score}</td><td>${r.correct}</td></tr>`);
             });
-            document.getElementById('ranking-loading').style.display = 'none';
+            const loading = document.getElementById('ranking-loading');
             const table = document.querySelector('.ranking-table');
-            table.style.display = 'table';
-            document.getElementById('ranking-body').innerHTML = rows.join('');
+            const body = document.getElementById('ranking-body');
+            if (loading) loading.style.display = 'none';
+            if (table) table.style.display = 'table';
+            if (body) body.innerHTML = rows.join('');
         });
 }
 
