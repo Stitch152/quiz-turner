@@ -123,13 +123,14 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-function getApp() {
+// Renomeado para não conflitar com getApp() importado do Firebase
+function getContainer() {
   return document.getElementById('app');
 }
 
 // ── Render principal ──────────────────────────────────────
 function render() {
-  const app = getApp();
+  const app = getContainer();
   if (!app) return;
 
   if (state.screen === 'home') {
@@ -207,7 +208,7 @@ function submitName() {
 
 // ── Quiz ──────────────────────────────────────────────────
 function renderQuiz() {
-  const app = getApp();
+  const app = getContainer();
   if (!app) return;
   const q       = questions[state.current];
   const diff    = difficulties[q.difficulty];
@@ -281,7 +282,7 @@ function nextQuestion() {
 
 // ── Resultado ─────────────────────────────────────────────
 function renderResult() {
-  const app = getApp();
+  const app = getContainer();
   if (!app) return;
   const maxScore = questions.reduce((s, q) => s + q.points, 0);
   const percent  = Math.round((state.score / maxScore) * 100);
@@ -342,7 +343,7 @@ function submitPassword() {
 
 // ── Ranking em tempo real ─────────────────────────────────
 function renderRanking() {
-  const app = getApp();
+  const app = getContainer();
   if (!app) return;
 
   app.innerHTML = `
