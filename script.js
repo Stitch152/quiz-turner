@@ -2,12 +2,12 @@
 // Requer: firebase-config.js com firebaseConfig válido
 // Firebase SDK já incluído em index.html
 
-// Inicialização Firebase
+// Inicialização Firebase compatível para HTML puro
 let db;
-if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length === 0 && typeof firebaseConfig !== 'undefined') {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-} else if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+    if (firebase.apps.length === 0) {
+        firebase.initializeApp(firebaseConfig);
+    }
     db = firebase.firestore();
 }
 const questions = [
