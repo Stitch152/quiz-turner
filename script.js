@@ -413,8 +413,12 @@ function renderRanking() {
       <thead><tr><th>#</th><th>Nome</th><th>Pontuação</th><th>Acertos</th></tr></thead>
       <tbody id="ranking-body"></tbody>
     </table>
-    <button class="btn" id="btnHome" style="margin-top:16px;">Voltar ao Início</button>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-secondary" id="btnBackAdmin" style="flex:1;">← Voltar</button>
+      <button class="btn btn-secondary" id="btnHome" style="flex:1;">🏠 Início</button>
+    </div>
   `;
+  document.getElementById('btnBackAdmin').addEventListener('click', () => { if (_unsubRanking) { _unsubRanking(); _unsubRanking = null; } state.screen = 'admin'; render(); });
   document.getElementById('btnHome').addEventListener('click', goHome);
 
   if (!_db) return;
