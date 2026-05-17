@@ -249,8 +249,6 @@ function submitPassword() {
 
 // Ranking global em tempo real
 let unsubscribeRanking = null;
-// Ranking global em tempo real
-let unsubscribeRanking = null;
 
 function renderRanking() {
     document.getElementById('app').innerHTML = `

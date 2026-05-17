@@ -1,4 +1,3 @@
-// Configuração Firebase compatível para HTML puro
 const firebaseConfig = {
   apiKey: "AIzaSyBNb5eOXQyGJEImUmFdTf1CDMrSvjo5Cr8",
   authDomain: "trabalho-faculdade-85d9f.firebaseapp.com",
@@ -9,4 +8,5 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const db = firebase.firestore();
