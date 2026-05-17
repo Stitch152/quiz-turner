@@ -365,11 +365,10 @@ function renderRanking() {
   if (_unsubRanking) { _unsubRanking(); _unsubRanking = null; }
 
   try {
+    // Ordenação só por score — não precisa de índice composto
     const q = query(
       collection(_db, 'turner_ranking'),
-      orderBy('score',   'desc'),
-      orderBy('correct', 'desc'),
-      orderBy('timestamp', 'asc')
+      orderBy('score', 'desc')
     );
     _unsubRanking = onSnapshot(q,
       snapshot => {
@@ -377,10 +376,15 @@ function renderRanking() {
         const tableEl  = document.getElementById('ranking-table');
         const bodyEl   = document.getElementById('ranking-body');
         if (!bodyEl) return;
+
+        // Ordena client-side por score desc, correct desc
+        const docs = [];
+        snapshot.forEach(doc => docs.push(doc.data()));
+        docs.sort((a, b) => b.score - a.score || b.correct - a.correct);
+
         const rows = [];
         let pos = 1;
-        snapshot.forEach(doc => {
-          const r = doc.data();
+        docs.forEach(r => {
           rows.push(`<tr>
             <td>${pos++}</td>
             <td>${escapeHtml(r.name || '')}</td>
