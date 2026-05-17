@@ -92,17 +92,19 @@ const PASSWORD = '140159';
 // Como este arquivo é type="module", cada variável aqui é
 // local ao módulo — sem nenhum conflito com outros scripts.
 let _db = null;
+let _firebaseError = null; // armazena o erro real para exibir na tela
 let _unsubRanking = null;
 
 function initFirebaseSafe() {
   try {
-    // Evita erro "app already exists" se o módulo for carregado mais de uma vez
     const fbApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     _db = getFirestore(fbApp);
+    _firebaseError = null;
     console.log('Firestore inicializado com sucesso.');
   } catch (e) {
-    console.error('Erro ao inicializar Firebase (quiz continua sem ranking):', e);
     _db = null;
+    _firebaseError = e.message || String(e);
+    console.error('Erro Firebase:', e);
   }
 }
 
@@ -349,7 +351,7 @@ function renderRanking() {
   app.innerHTML = `
     <div class="title">Ranking</div>
     <div id="ranking-status" style="text-align:center;margin:18px;color:#6366f1;">
-      ${_db ? 'Carregando ranking...' : 'Firebase não configurado. Ranking indisponível.'}
+      ${_db ? 'Carregando ranking...' : (_firebaseError ? 'Erro Firebase: ' + _firebaseError : 'Firebase não configurado.')}
     </div>
     <table class="ranking-table" id="ranking-table" style="display:none;">
       <thead><tr><th>#</th><th>Nome</th><th>Pontuação</th><th>Acertos</th></tr></thead>
