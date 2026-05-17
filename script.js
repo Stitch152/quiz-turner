@@ -2,14 +2,15 @@
 // Requer: firebase-config.js com firebaseConfig válido
 // Firebase SDK já incluído em index.html
 
-// Inicialização Firebase compatível para HTML puro
 let db;
+
 if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
     if (firebase.apps.length === 0) {
         firebase.initializeApp(firebaseConfig);
     }
     db = firebase.firestore();
 }
+
 const questions = [
     {
         text: 'Qual é o cariótipo característico da Síndrome de Turner?',
@@ -80,43 +81,52 @@ let state = {
     finished: false
 };
 
+// ---------------- UI ----------------
+
 function render() {
     const app = document.getElementById('app');
+
     if (state.screen === 'home') {
         app.innerHTML = `
             <div class="title">Síndrome de Turner</div>
             <button class="btn" onclick="startName()">Início do Questionário</button>
             <button class="btn btn-secondary" onclick="showRankingLogin()">Área das Respostas</button>
         `;
-    } else if (state.screen === 'name') {
+    }
+
+    else if (state.screen === 'name') {
         app.innerHTML = `
             <div class="title">Digite seu nome</div>
-            <div class="input-group">
-                <input type="text" id="inputName" maxlength="30" placeholder="Seu nome" autofocus />
-            </div>
-            <button class="btn" onclick="submitName()">Iniciar Quiz</button>
+            <input id="inputName" placeholder="Seu nome"/>
+            <button class="btn" onclick="submitName()">Iniciar</button>
             <button class="btn btn-secondary" onclick="goHome()">Voltar</button>
         `;
-        setTimeout(() => document.getElementById('inputName').focus(), 100);
-    } else if (state.screen === 'quiz') {
+    }
+
+    else if (state.screen === 'quiz') {
         renderQuiz();
-    } else if (state.screen === 'result') {
+    }
+
+    else if (state.screen === 'result') {
         renderResult();
-    } else if (state.screen === 'ranking-login') {
+    }
+
+    else if (state.screen === 'ranking-login') {
         app.innerHTML = `
             <div class="title">Área das Respostas</div>
-            <div class="input-group">
-                <input type="password" id="inputPass" maxlength="12" placeholder="Senha de acesso" autofocus />
-            </div>
+            <input id="inputPass" type="password" placeholder="Senha"/>
             <button class="btn" onclick="submitPassword()">Entrar</button>
             <button class="btn btn-secondary" onclick="goHome()">Voltar</button>
-            <div id="passFeedback" class="feedback" style="display:none;"></div>
+            <div id="passFeedback"></div>
         `;
-        setTimeout(() => document.getElementById('inputPass').focus(), 100);
-    } else if (state.screen === 'ranking') {
+    }
+
+    else if (state.screen === 'ranking') {
         renderRanking();
     }
 }
+
+// ---------------- NAV ----------------
 
 function goHome() {
     state = { screen: 'home', name: '', current: 0, score: 0, correct: 0, finished: false };
@@ -130,102 +140,75 @@ function startName() {
 
 function submitName() {
     const name = document.getElementById('inputName').value.trim();
-    if (!name) {
-        document.getElementById('inputName').style.border = '2px solid #ef4444';
-        return;
-    }
+    if (!name) return;
+
     state.name = name;
     state.screen = 'quiz';
     state.current = 0;
     state.score = 0;
     state.correct = 0;
-    state.finished = false;
     render();
 }
+
+// ---------------- QUIZ ----------------
 
 function renderQuiz() {
     const q = questions[state.current];
     const diff = difficulties[q.difficulty];
-    const progress = ((state.current) / questions.length) * 100;
+
     let optionsHtml = '';
+
     q.options.forEach((opt, i) => {
-        optionsHtml += `<div class="option" id="opt${i}" onclick="selectOption(${i})">${String.fromCharCode(65+i)}) ${opt}</div>`;
+        optionsHtml += `
+            <div class="option" onclick="selectOption(${i})">
+                ${String.fromCharCode(65 + i)}) ${opt}
+            </div>
+        `;
     });
+
     document.getElementById('app').innerHTML = `
-        <div class="progress-bar"><div class="progress" style="width:${progress}%;"></div></div>
-        <div class="question">${q.text}</div>
+        <div class="title">${q.text}</div>
         <div class="${diff.class}">${diff.label}</div>
-        <div class="options">${optionsHtml}</div>
-        <button class="btn" id="nextBtn" style="display:none; margin-top:10px;">Próxima</button>
+        <div>${optionsHtml}</div>
     `;
 }
 
-function selectOption(idx) {
+function selectOption(i) {
     const q = questions[state.current];
-    const options = document.querySelectorAll('.option');
-    options.forEach(opt => opt.classList.remove('selected', 'correct', 'incorrect'));
-    options[idx].classList.add('selected');
-    setTimeout(() => {
-        if (idx === q.answer) {
-            options[idx].classList.add('correct');
-            state.score += q.points;
-            state.correct++;
-            nextQuestionDelayed();
-        } else {
-            options[idx].classList.add('incorrect');
-            showFeedback(q.explanation);
-        }
-        options.forEach(opt => opt.onclick = null);
-    }, 250);
-}
 
-function showFeedback(msg) {
-    let feedback = document.createElement('div');
-    feedback.className = 'feedback';
-    feedback.innerHTML = `Resposta incorreta. Explicação: ${msg}`;
-    document.querySelector('.options').after(feedback);
-    document.getElementById('nextBtn').style.display = 'block';
-    document.getElementById('nextBtn').onclick = nextQuestion;
-}
+    if (i === q.answer) {
+        state.score += q.points;
+        state.correct++;
+    }
 
-function nextQuestionDelayed() {
-    setTimeout(() => {
-        nextQuestion();
-    }, 900);
-}
-
-function nextQuestion() {
     state.current++;
+
     if (state.current >= questions.length) {
-        state.finished = true;
         state.screen = 'result';
     }
+
     render();
 }
 
+// ---------------- RESULT ----------------
+
 function renderResult() {
-    const percent = Math.round((state.score / 8) * 100);
-    let performance = '';
-    if (state.score === 8) performance = 'Excelente! Você acertou tudo!';
-    else if (state.score >= 6) performance = 'Ótimo desempenho!';
-    else if (state.score >= 4) performance = 'Bom, mas pode melhorar.';
-    else performance = 'Até tentou, mas o resultado final foi TRISTE.';
     document.getElementById('app').innerHTML = `
-        <div class="title">Resultado Final</div>
-        <div class="result">
-            <div><b>Nome:</b> ${state.name}</div>
-            <div class="score">${state.score} pontos</div>
-            <div><b>Acertos:</b> ${state.correct} de ${questions.length}</div>
-            <div class="performance">${performance}</div>
-            <button class="btn" onclick="goHome()">Voltar ao Início</button>
-        </div>
+        <div class="title">Resultado</div>
+        <p>Nome: ${state.name}</p>
+        <p>Pontos: ${state.score}</p>
+        <p>Acertos: ${state.correct}</p>
+        <button class="btn" onclick="goHome()">Voltar</button>
     `;
+
     saveRanking();
 }
 
-// Salva tentativa no Firestore
+// ---------------- FIREBASE ----------------
+
 function saveRanking() {
     if (!db) return;
+
     db.collection('turner_ranking').add({
         name: state.name,
         score: state.score,
@@ -234,6 +217,8 @@ function saveRanking() {
     });
 }
 
+// ---------------- RANKING ----------------
+
 function showRankingLogin() {
     state.screen = 'ranking-login';
     render();
@@ -241,52 +226,60 @@ function showRankingLogin() {
 
 function submitPassword() {
     const pass = document.getElementById('inputPass').value;
+
     if (pass === PASSWORD) {
         state.screen = 'ranking';
         render();
     } else {
-        const feedback = document.getElementById('passFeedback');
-        feedback.style.display = 'block';
-        feedback.innerText = 'Senha incorreta.';
-        document.getElementById('inputPass').style.border = '2px solid #ef4444';
+        document.getElementById('passFeedback').innerText = 'Senha incorreta';
     }
 }
 
-// Ranking global em tempo real
 let unsubscribeRanking = null;
+
 function renderRanking() {
     document.getElementById('app').innerHTML = `
         <div class="title">Ranking</div>
-        <div id="ranking-loading" style="text-align:center; margin:18px;">Carregando ranking...</div>
+        <div id="ranking-loading">Carregando...</div>
         <table class="ranking-table" style="display:none;">
-            <thead><tr><th>#</th><th>Nome</th><th>Pontuação</th><th>Acertos</th></tr></thead>
             <tbody id="ranking-body"></tbody>
         </table>
-        <button class="btn" onclick="goHome()">Voltar ao Início</button>
+        <button class="btn" onclick="goHome()">Voltar</button>
     `;
-    // Atualização em tempo real
+
     if (unsubscribeRanking) unsubscribeRanking();
+
     unsubscribeRanking = db.collection('turner_ranking')
         .orderBy('score', 'desc')
-        .orderBy('correct', 'desc')
-        .orderBy('timestamp', 'asc')
         .onSnapshot(snapshot => {
-            const rows = [];
+
+            const loading = document.getElementById('ranking-loading');
+            const body = document.getElementById('ranking-body');
+            const table = document.querySelector('.ranking-table');
+
+            if (!loading || !body || !table) return;
+
+            let html = '';
             let i = 1;
+
             snapshot.forEach(doc => {
                 const r = doc.data();
-                rows.push(`<tr><td>${i++}</td><td>${r.name}</td><td>${r.score}</td><td>${r.correct}</td></tr>`);
+                html += `
+                    <tr>
+                        <td>${i++}</td>
+                        <td>${r.name}</td>
+                        <td>${r.score}</td>
+                        <td>${r.correct}</td>
+                    </tr>
+                `;
             });
-            const loading = document.getElementById('ranking-loading');
-            const table = document.querySelector('.ranking-table');
-            const body = document.getElementById('ranking-body');
-            if (loading) loading.style.display = 'none';
-            if (table) table.style.display = 'table';
-            if (body) body.innerHTML = rows.join('');
+
+            loading.style.display = 'none';
+            table.style.display = 'table';
+            body.innerHTML = html;
         });
 }
 
-// Inicialização
-window.addEventListener('DOMContentLoaded', () => {
-    render();
-});
+// ---------------- INIT ----------------
+
+window.addEventListener('DOMContentLoaded', render);
