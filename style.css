@@ -340,6 +340,64 @@ input[type="password"]:focus {
   font-weight: 700;
 }
 
+/* Gabarito */
+.gabarito-card {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 14px;
+  margin-bottom: 16px;
+}
+.gabarito-num {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #6366f1;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.gabarito-diff {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.gabarito-question {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #3b3b5c;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.gabarito-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.gabarito-option {
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1.5px solid #e2e8f0;
+  font-size: 0.95rem;
+  color: #64748b;
+  background: #fff;
+}
+.gabarito-correct {
+  background: #f0fdf4;
+  border-color: #22c55e;
+  color: #15803d;
+  font-weight: 700;
+}
+.gabarito-explanation {
+  font-size: 0.9rem;
+  color: #92400e;
+  background: #fff7ed;
+  border: 1px solid #fb923c;
+  border-radius: 7px;
+  padding: 8px 10px;
+  line-height: 1.4;
+}
+
 /* Responsividade mobile */
 @media (max-width: 480px) {
   #app {

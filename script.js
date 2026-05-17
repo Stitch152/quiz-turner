@@ -177,8 +177,12 @@ function render() {
     document.getElementById('btnBack').addEventListener('click', goHome);
     setTimeout(() => { const el = document.getElementById('inputPass'); if (el) el.focus(); }, 100);
 
+  } else if (state.screen === 'admin') {
+    renderAdmin();
   } else if (state.screen === 'ranking') {
     renderRanking();
+  } else if (state.screen === 'gabarito') {
+    renderGabarito();
   }
 }
 
@@ -333,7 +337,7 @@ function submitPassword() {
   const feedback = document.getElementById('passFeedback');
   if (!input) return;
   if (input.value === PASSWORD) {
-    state.screen = 'ranking';
+    state.screen = 'admin';
     render();
   } else {
     if (feedback) { feedback.style.display = 'block'; feedback.innerText = 'Senha incorreta.'; }
@@ -341,6 +345,58 @@ function submitPassword() {
     input.value = '';
     setTimeout(() => input.focus(), 50);
   }
+}
+
+// ── Tela admin (após senha) ───────────────────────────────
+function renderAdmin() {
+  const app = getContainer();
+  if (!app) return;
+  app.innerHTML = `
+    <div class="title">Área das Respostas</div>
+    <button class="btn" id="btnGoRanking">🏆 Ver Ranking</button>
+    <button class="btn btn-secondary" id="btnGoGabarito">📋 Ver Gabarito</button>
+    <button class="btn btn-secondary" id="btnHome" style="margin-top:8px;">Voltar ao Início</button>
+  `;
+  document.getElementById('btnGoRanking').addEventListener('click', () => { state.screen = 'ranking'; render(); });
+  document.getElementById('btnGoGabarito').addEventListener('click', () => { state.screen = 'gabarito'; render(); });
+  document.getElementById('btnHome').addEventListener('click', goHome);
+}
+
+// ── Gabarito ──────────────────────────────────────────────
+function renderGabarito() {
+  const app = getContainer();
+  if (!app) return;
+
+  const diffLabels = { easy: 'Fácil', medium: 'Média', hard: 'Difícil' };
+  const diffColors = { easy: '#22c55e', medium: '#eab308', hard: '#ef4444' };
+
+  let html = '<div class="title">Gabarito</div>';
+
+  questions.forEach((q, i) => {
+    const color = diffColors[q.difficulty];
+    const label = diffLabels[q.difficulty];
+    html += `
+      <div class="gabarito-card">
+        <div class="gabarito-num">Questão ${i + 1}
+          <span class="gabarito-diff" style="color:${color};">${label} · ${q.points} pt${q.points !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="gabarito-question">${q.text}</div>
+        <div class="gabarito-options">
+          ${q.options.map((opt, idx) => `
+            <div class="gabarito-option ${idx === q.answer ? 'gabarito-correct' : ''}">
+              ${String.fromCharCode(65 + idx)}) ${opt}
+              ${idx === q.answer ? ' ✔' : ''}
+            </div>
+          `).join('')}
+        </div>
+        <div class="gabarito-explanation">💡 ${q.explanation}</div>
+      </div>
+    `;
+  });
+
+  html += `<button class="btn btn-secondary" id="btnBackAdmin" style="margin-top:16px;">← Voltar</button>`;
+  app.innerHTML = html;
+  document.getElementById('btnBackAdmin').addEventListener('click', () => { state.screen = 'admin'; render(); });
 }
 
 // ── Ranking em tempo real ─────────────────────────────────
