@@ -3,8 +3,13 @@
 // Firebase SDK já incluído em index.html
 
 // Inicialização Firebase compatível para HTML puro
-// usa o db vindo do firebase-config.js
-
+let db;
+if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+    if (firebase.apps.length === 0) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    db = firebase.firestore();
+}
 const questions = [
     {
         text: 'Qual é o cariótipo característico da Síndrome de Turner?',
@@ -144,8 +149,10 @@ function renderQuiz() {
     const progress = ((state.current) / questions.length) * 100;
     let optionsHtml = '';
     q.options.forEach((opt, i) => {
-        optionsHtml += `<div class="option" id="opt${i}" onclick="selectOption(${i})">${String.fromCharCode(65+i)}) ${opt}</div>`;
-    });
+  optionsHtml += `<div class="option" id="opt${i}" onclick="selectOption(${i})">
+    ${String.fromCharCode(65+i)}) ${opt}
+  </div>`;
+});
     document.getElementById('app').innerHTML = `
         <div class="progress-bar"><div class="progress" style="width:${progress}%;"></div></div>
         <div class="question">${q.text}</div>
@@ -249,69 +256,35 @@ function submitPassword() {
 
 // Ranking global em tempo real
 let unsubscribeRanking = null;
-
 function renderRanking() {
     document.getElementById('app').innerHTML = `
         <div class="title">Ranking</div>
-        <div id="ranking-loading" style="text-align:center; margin:18px;">
-            Carregando ranking...
-        </div>
-
+        <div id="ranking-loading" style="text-align:center; margin:18px;">Carregando ranking...</div>
         <table class="ranking-table" style="display:none;">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Nome</th>
-                    <th>Pontuação</th>
-                    <th>Acertos</th>
-                </tr>
-            </thead>
+            <thead><tr><th>#</th><th>Nome</th><th>Pontuação</th><th>Acertos</th></tr></thead>
             <tbody id="ranking-body"></tbody>
         </table>
-
-        <button class="btn" onclick="goHome()">
-            Voltar ao Início
-        </button>
+        <button class="btn" onclick="goHome()">Voltar ao Início</button>
     `;
-
-    // Cancela listener antigo
-    if (unsubscribeRanking) {
-        unsubscribeRanking();
-    }
-
     // Atualização em tempo real
+    if (unsubscribeRanking) unsubscribeRanking();
     unsubscribeRanking = db.collection('turner_ranking')
         .orderBy('score', 'desc')
         .orderBy('correct', 'desc')
         .orderBy('timestamp', 'asc')
         .onSnapshot(snapshot => {
-
+            const rows = [];
+            let i = 1;
+            snapshot.forEach(doc => {
+                const r = doc.data();
+                rows.push(`<tr><td>${i++}</td><td>${r.name}</td><td>${r.score}</td><td>${r.correct}</td></tr>`);
+            });
             const loading = document.getElementById('ranking-loading');
             const table = document.querySelector('.ranking-table');
             const body = document.getElementById('ranking-body');
-
-            // Proteção
-            if (!loading || !table || !body) return;
-
-            const rows = [];
-            let i = 1;
-
-            snapshot.forEach(doc => {
-                const r = doc.data();
-
-                rows.push(`
-                    <tr>
-                        <td>${i++}</td>
-                        <td>${r.name}</td>
-                        <td>${r.score}</td>
-                        <td>${r.correct}</td>
-                    </tr>
-                `);
-            });
-
-            loading.style.display = 'none';
-            table.style.display = 'table';
-            body.innerHTML = rows.join('');
+            if (loading) loading.style.display = 'none';
+            if (table) table.style.display = 'table';
+            if (body) body.innerHTML = rows.join('');
         });
 }
 
