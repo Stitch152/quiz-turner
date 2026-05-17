@@ -1,13 +1,10 @@
-// Renomeie para firebase-config.js e preencha com suas credenciais do Firebase
-// Veja instruções em https://console.firebase.google.com/
-
+// Configuração Firebase (modo compatível)
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_AUTH_DOMAIN",
-  projectId: "SEU_PROJECT_ID",
-  storageBucket: "SEU_STORAGE_BUCKET",
-  messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-  appId: "SEU_APP_ID"
+  apiKey: "AIzaSyBNb5eOXQyGJEImUmFdTf1CDMrSvjo5Cr8",
+  authDomain: "trabalho-faculdade-85d9f.firebaseapp.com",
+  projectId: "trabalho-faculdade-85d9f",
+  storageBucket: "trabalho-faculdade-85d9f.appspot.com", // corrigido!
+  messagingSenderId: "529348366136",
+  appId: "1:529348366136:web:0d741b2259a08704f77bcd",
+  measurementId: "G-PX7VB80P72"
 };
-
-// Não esqueça de importar este arquivo em script.js
