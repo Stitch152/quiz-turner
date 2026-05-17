@@ -1,17 +1,8 @@
-// ============================================================
-// script.js — Quiz Síndrome de Turner (corrigido)
-// ============================================================
-// CORREÇÕES APLICADAS:
-//  1. initAppSafe() garante que render() sempre executa,
-//     mesmo se o Firebase falhar.
-//  2. Firebase inicializado dentro de try/catch — erro no
-//     Firebase não mata o restante do script.
-//  3. Verificação de #app antes de qualquer render.
-//  4. Fallback de tela de erro caso o DOM não exista.
-// ============================================================
+(function () {
+'use strict';
 
 // ── Dados do quiz ──────────────────────────────────────────
-const questions = [
+var questions = [
     {
         text: 'Qual é o cariótipo característico da Síndrome de Turner?',
         options: ['47,XXY', '45,X', '46,XY', '46,XX'],
@@ -64,18 +55,19 @@ const questions = [
     }
 ];
 
-const difficulties = {
-    easy:   { label: 'Fácil',  class: 'difficulty-easy'   },
-    medium: { label: 'Média',  class: 'difficulty-medium'  },
-    hard:   { label: 'Difícil', class: 'difficulty-hard'  }
+var difficulties = {
+    easy:   { label: 'Fácil',   cls: 'difficulty-easy'   },
+    medium: { label: 'Média',   cls: 'difficulty-medium'  },
+    hard:   { label: 'Difícil', cls: 'difficulty-hard'   }
 };
 
-const PASSWORD = '140159';
+var PASSWORD = '140159';
 
-// ── Estado global ──────────────────────────────────────────
-let db = null;
+// ── Estado ─────────────────────────────────────────────────
+var _db = null;           // Firestore — nome privado evita conflito
+var _unsubRanking = null; // listener em tempo real
 
-let state = {
+var state = {
     screen: 'home',
     name: '',
     current: 0,
@@ -84,7 +76,7 @@ let state = {
     finished: false
 };
 
-// ── Inicialização segura do Firebase ───────────────────────
+// ── Firebase seguro ────────────────────────────────────────
 function initFirebaseSafe() {
     try {
         if (typeof firebase === 'undefined') {
@@ -98,85 +90,78 @@ function initFirebaseSafe() {
         if (firebase.apps.length === 0) {
             firebase.initializeApp(firebaseConfig);
         }
-        db = firebase.firestore();
+        _db = firebase.firestore();
         console.log('Firebase inicializado com sucesso.');
-    } catch (err) {
-        console.error('Erro ao inicializar Firebase (quiz continua sem ranking):', err);
-        db = null;
+    } catch (e) {
+        console.error('Erro ao inicializar Firebase (quiz continua sem ranking):', e);
+        _db = null;
     }
 }
 
-// ── Inicialização principal segura ─────────────────────────
+// ── Init principal ─────────────────────────────────────────
 function initAppSafe() {
-    // 1. Garante que o elemento #app existe
-    let app = document.getElementById('app');
+    var app = document.getElementById('app');
     if (!app) {
-        // Cria o elemento caso não exista (segurança extra)
         app = document.createElement('div');
         app.id = 'app';
         document.body.appendChild(app);
     }
-
-    // 2. Inicializa Firebase (sem bloquear o quiz se falhar)
     initFirebaseSafe();
-
-    // 3. Renderiza a tela inicial
     try {
         render();
-    } catch (err) {
-        console.error('Erro ao renderizar tela inicial:', err);
-        app.innerHTML = `
-            <div class="title">Síndrome de Turner</div>
-            <div class="feedback" style="display:block; color:#ef4444;">
-                Ocorreu um erro ao carregar o quiz.<br>
-                Recarregue a página ou verifique o console.
-            </div>
-        `;
+    } catch (e) {
+        console.error('Erro ao renderizar:', e);
+        app.innerHTML =
+            '<div class="title">Síndrome de Turner</div>' +
+            '<div class="feedback" style="display:block;color:#ef4444;">' +
+            'Ocorreu um erro ao carregar o quiz. Recarregue a página.</div>';
     }
 }
 
-// ── Renderização principal ─────────────────────────────────
+// ── Render ─────────────────────────────────────────────────
 function render() {
-    const app = document.getElementById('app');
+    var app = document.getElementById('app');
     if (!app) return;
 
     if (state.screen === 'home') {
-        app.innerHTML = `
-            <div class="title">Síndrome de Turner</div>
-            <button class="btn" onclick="startName()">Início do Questionário</button>
-            <button class="btn btn-secondary" onclick="showRankingLogin()">Área das Respostas</button>
-        `;
+        app.innerHTML =
+            '<div class="title">Síndrome de Turner</div>' +
+            '<button class="btn" onclick="quizApp.startName()">Início do Questionário</button>' +
+            '<button class="btn btn-secondary" onclick="quizApp.showRankingLogin()">Área das Respostas</button>';
+
     } else if (state.screen === 'name') {
-        app.innerHTML = `
-            <div class="title">Digite seu nome</div>
-            <div class="input-group">
-                <input type="text" id="inputName" maxlength="30" placeholder="Seu nome" />
-            </div>
-            <button class="btn" onclick="submitName()">Iniciar Quiz</button>
-            <button class="btn btn-secondary" onclick="goHome()">Voltar</button>
-        `;
-        setTimeout(() => {
-            const el = document.getElementById('inputName');
+        app.innerHTML =
+            '<div class="title">Digite seu nome</div>' +
+            '<div class="input-group">' +
+            '<input type="text" id="inputName" maxlength="30" placeholder="Seu nome" />' +
+            '</div>' +
+            '<button class="btn" onclick="quizApp.submitName()">Iniciar Quiz</button>' +
+            '<button class="btn btn-secondary" onclick="quizApp.goHome()">Voltar</button>';
+        setTimeout(function () {
+            var el = document.getElementById('inputName');
             if (el) el.focus();
         }, 100);
+
     } else if (state.screen === 'quiz') {
         renderQuiz();
+
     } else if (state.screen === 'result') {
         renderResult();
+
     } else if (state.screen === 'ranking-login') {
-        app.innerHTML = `
-            <div class="title">Área das Respostas</div>
-            <div class="input-group">
-                <input type="password" id="inputPass" maxlength="12" placeholder="Senha de acesso" />
-            </div>
-            <button class="btn" onclick="submitPassword()">Entrar</button>
-            <button class="btn btn-secondary" onclick="goHome()">Voltar</button>
-            <div id="passFeedback" class="feedback" style="display:none;"></div>
-        `;
-        setTimeout(() => {
-            const el = document.getElementById('inputPass');
+        app.innerHTML =
+            '<div class="title">Área das Respostas</div>' +
+            '<div class="input-group">' +
+            '<input type="password" id="inputPass" maxlength="12" placeholder="Senha de acesso" />' +
+            '</div>' +
+            '<button class="btn" onclick="quizApp.submitPassword()">Entrar</button>' +
+            '<button class="btn btn-secondary" onclick="quizApp.goHome()">Voltar</button>' +
+            '<div id="passFeedback" class="feedback" style="display:none;"></div>';
+        setTimeout(function () {
+            var el = document.getElementById('inputPass');
             if (el) el.focus();
         }, 100);
+
     } else if (state.screen === 'ranking') {
         renderRanking();
     }
@@ -184,10 +169,7 @@ function render() {
 
 // ── Navegação ──────────────────────────────────────────────
 function goHome() {
-    if (unsubscribeRanking) {
-        unsubscribeRanking();
-        unsubscribeRanking = null;
-    }
+    if (_unsubRanking) { _unsubRanking(); _unsubRanking = null; }
     state = { screen: 'home', name: '', current: 0, score: 0, correct: 0, finished: false };
     render();
 }
@@ -198,13 +180,10 @@ function startName() {
 }
 
 function submitName() {
-    const input = document.getElementById('inputName');
+    var input = document.getElementById('inputName');
     if (!input) return;
-    const name = input.value.trim();
-    if (!name) {
-        input.style.border = '2px solid #ef4444';
-        return;
-    }
+    var name = input.value.trim();
+    if (!name) { input.style.border = '2px solid #ef4444'; return; }
     state.name = name;
     state.screen = 'quiz';
     state.current = 0;
@@ -216,46 +195,41 @@ function submitName() {
 
 // ── Quiz ───────────────────────────────────────────────────
 function renderQuiz() {
-    const app = document.getElementById('app');
+    var app = document.getElementById('app');
     if (!app) return;
-
-    const q = questions[state.current];
-    const diff = difficulties[q.difficulty];
-    const progress = (state.current / questions.length) * 100;
-
-    let optionsHtml = '';
-    q.options.forEach((opt, i) => {
-        optionsHtml += `<div class="option" id="opt${i}" onclick="selectOption(${i})">
-            ${String.fromCharCode(65 + i)}) ${opt}
-        </div>`;
-    });
-
-    app.innerHTML = `
-        <div class="progress-bar"><div class="progress" style="width:${progress}%;"></div></div>
-        <div class="question">${q.text}</div>
-        <div class="${diff.class}">${diff.label}</div>
-        <div class="options">${optionsHtml}</div>
-        <button class="btn" id="nextBtn" style="display:none; margin-top:10px;" onclick="nextQuestion()">Próxima</button>
-    `;
+    var q = questions[state.current];
+    var diff = difficulties[q.difficulty];
+    var progress = (state.current / questions.length) * 100;
+    var optionsHtml = '';
+    for (var i = 0; i < q.options.length; i++) {
+        optionsHtml +=
+            '<div class="option" id="opt' + i + '" onclick="quizApp.selectOption(' + i + ')">' +
+            String.fromCharCode(65 + i) + ') ' + q.options[i] +
+            '</div>';
+    }
+    app.innerHTML =
+        '<div class="progress-bar"><div class="progress" style="width:' + progress + '%;"></div></div>' +
+        '<div class="question">' + q.text + '</div>' +
+        '<div class="' + diff.cls + '">' + diff.label + '</div>' +
+        '<div class="options">' + optionsHtml + '</div>' +
+        '<button class="btn" id="nextBtn" style="display:none;margin-top:10px;" onclick="quizApp.nextQuestion()">Próxima</button>';
 }
 
 function selectOption(idx) {
-    const q = questions[state.current];
-    const options = document.querySelectorAll('.option');
-
-    // Remove eventos de clique imediatamente para evitar duplo clique
-    options.forEach(opt => {
-        opt.onclick = null;
-        opt.classList.remove('selected', 'correct', 'incorrect');
-    });
+    var q = questions[state.current];
+    var options = document.querySelectorAll('.option');
+    for (var i = 0; i < options.length; i++) {
+        options[i].onclick = null;
+        options[i].classList.remove('selected', 'correct', 'incorrect');
+    }
     options[idx].classList.add('selected');
 
-    setTimeout(() => {
+    setTimeout(function () {
         if (idx === q.answer) {
             options[idx].classList.add('correct');
             state.score += q.points;
             state.correct++;
-            nextQuestionDelayed();
+            setTimeout(nextQuestion, 900);
         } else {
             options[idx].classList.add('incorrect');
             options[q.answer].classList.add('correct');
@@ -265,23 +239,16 @@ function selectOption(idx) {
 }
 
 function showFeedback(msg) {
-    const optionsEl = document.querySelector('.options');
-    const nextBtn = document.getElementById('nextBtn');
+    var optionsEl = document.querySelector('.options');
+    var nextBtn = document.getElementById('nextBtn');
     if (!optionsEl || !nextBtn) return;
-
-    // Remove feedback anterior se existir
-    const existing = document.querySelector('.feedback');
+    var existing = document.querySelector('.feedback');
     if (existing) existing.remove();
-
-    const feedback = document.createElement('div');
+    var feedback = document.createElement('div');
     feedback.className = 'feedback';
-    feedback.innerHTML = `<b>Resposta incorreta.</b> ${msg}`;
+    feedback.innerHTML = '<b>Resposta incorreta.</b> ' + msg;
     optionsEl.after(feedback);
     nextBtn.style.display = 'block';
-}
-
-function nextQuestionDelayed() {
-    setTimeout(nextQuestion, 900);
 }
 
 function nextQuestion() {
@@ -295,50 +262,47 @@ function nextQuestion() {
 
 // ── Resultado ──────────────────────────────────────────────
 function renderResult() {
-    const app = document.getElementById('app');
+    var app = document.getElementById('app');
     if (!app) return;
+    var maxScore = 0;
+    for (var i = 0; i < questions.length; i++) maxScore += questions[i].points;
+    var percent = Math.round((state.score / maxScore) * 100);
+    var performance = '';
+    if (state.score >= maxScore)   performance = 'Excelente! Você acertou tudo!';
+    else if (percent >= 75)         performance = 'Ótimo desempenho!';
+    else if (percent >= 50)         performance = 'Bom, mas pode melhorar.';
+    else                            performance = 'Até tentou, mas o resultado final foi TRISTE.';
 
-    const maxScore = questions.reduce((sum, q) => sum + q.points, 0);
-    const percent = Math.round((state.score / maxScore) * 100);
-
-    let performance = '';
-    if (state.score >= maxScore) performance = 'Excelente! Você acertou tudo!';
-    else if (percent >= 75) performance = 'Ótimo desempenho!';
-    else if (percent >= 50) performance = 'Bom, mas pode melhorar.';
-    else performance = 'Até tentou, mas o resultado final foi TRISTE.';
-
-    app.innerHTML = `
-        <div class="title">Resultado Final</div>
-        <div class="result">
-            <div><b>Nome:</b> ${escapeHtml(state.name)}</div>
-            <div class="score">${state.score} pontos</div>
-            <div><b>Acertos:</b> ${state.correct} de ${questions.length}</div>
-            <div class="performance">${performance}</div>
-            <button class="btn" onclick="goHome()">Voltar ao Início</button>
-        </div>
-    `;
+    app.innerHTML =
+        '<div class="title">Resultado Final</div>' +
+        '<div class="result">' +
+        '<div><b>Nome:</b> ' + escapeHtml(state.name) + '</div>' +
+        '<div class="score">' + state.score + ' pontos</div>' +
+        '<div><b>Acertos:</b> ' + state.correct + ' de ' + questions.length + '</div>' +
+        '<div class="performance">' + performance + '</div>' +
+        '<button class="btn" onclick="quizApp.goHome()">Voltar ao Início</button>' +
+        '</div>';
     saveRanking();
 }
 
-// Previne XSS ao exibir nomes no HTML
 function escapeHtml(text) {
-    const div = document.createElement('div');
+    var div = document.createElement('div');
     div.appendChild(document.createTextNode(text));
     return div.innerHTML;
 }
 
 // ── Firestore ──────────────────────────────────────────────
 function saveRanking() {
-    if (!db) return;
+    if (!_db) return;
     try {
-        db.collection('turner_ranking').add({
+        _db.collection('turner_ranking').add({
             name: state.name,
             score: state.score,
             correct: state.correct,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).catch(err => console.error('Erro ao salvar ranking:', err));
-    } catch (err) {
-        console.error('Erro ao salvar ranking:', err);
+        }).catch(function (e) { console.error('Erro ao salvar ranking:', e); });
+    } catch (e) {
+        console.error('Erro ao salvar ranking:', e);
     }
 }
 
@@ -348,105 +312,86 @@ function showRankingLogin() {
 }
 
 function submitPassword() {
-    const input = document.getElementById('inputPass');
-    const feedback = document.getElementById('passFeedback');
+    var input = document.getElementById('inputPass');
+    var feedback = document.getElementById('passFeedback');
     if (!input) return;
-
     if (input.value === PASSWORD) {
         state.screen = 'ranking';
         render();
     } else {
-        if (feedback) {
-            feedback.style.display = 'block';
-            feedback.innerText = 'Senha incorreta.';
-        }
+        if (feedback) { feedback.style.display = 'block'; feedback.innerText = 'Senha incorreta.'; }
         input.style.border = '2px solid #ef4444';
         input.value = '';
-        setTimeout(() => input.focus(), 50);
+        setTimeout(function () { input.focus(); }, 50);
     }
 }
 
 // ── Ranking em tempo real ──────────────────────────────────
-let unsubscribeRanking = null;
-
 function renderRanking() {
-    const app = document.getElementById('app');
+    var app = document.getElementById('app');
     if (!app) return;
+    app.innerHTML =
+        '<div class="title">Ranking</div>' +
+        '<div id="ranking-status" style="text-align:center;margin:18px;color:#6366f1;">' +
+        (_db ? 'Carregando ranking...' : 'Firebase não configurado. Ranking indisponível.') +
+        '</div>' +
+        '<table class="ranking-table" id="ranking-table" style="display:none;">' +
+        '<thead><tr><th>#</th><th>Nome</th><th>Pontuação</th><th>Acertos</th></tr></thead>' +
+        '<tbody id="ranking-body"></tbody>' +
+        '</table>' +
+        '<button class="btn" onclick="quizApp.goHome()" style="margin-top:16px;">Voltar ao Início</button>';
 
-    app.innerHTML = `
-        <div class="title">Ranking</div>
-        <div id="ranking-status" style="text-align:center; margin:18px; color:#6366f1;">
-            ${db ? 'Carregando ranking...' : 'Firebase não configurado. Ranking indisponível.'}
-        </div>
-        <table class="ranking-table" id="ranking-table" style="display:none;">
-            <thead>
-                <tr><th>#</th><th>Nome</th><th>Pontuação</th><th>Acertos</th></tr>
-            </thead>
-            <tbody id="ranking-body"></tbody>
-        </table>
-        <button class="btn" onclick="goHome()" style="margin-top:16px;">Voltar ao Início</button>
-    `;
-
-    if (!db) return;
-
-    // Cancela listener anterior se existir
-    if (unsubscribeRanking) {
-        unsubscribeRanking();
-        unsubscribeRanking = null;
-    }
+    if (!_db) return;
+    if (_unsubRanking) { _unsubRanking(); _unsubRanking = null; }
 
     try {
-        unsubscribeRanking = db.collection('turner_ranking')
+        _unsubRanking = _db.collection('turner_ranking')
             .orderBy('score', 'desc')
             .orderBy('correct', 'desc')
             .orderBy('timestamp', 'asc')
-            .onSnapshot(
-                snapshot => {
-                    const statusEl = document.getElementById('ranking-status');
-                    const tableEl  = document.getElementById('ranking-table');
-                    const bodyEl   = document.getElementById('ranking-body');
-                    if (!bodyEl) return;
-
-                    const rows = [];
-                    let i = 1;
-                    snapshot.forEach(doc => {
-                        const r = doc.data();
-                        rows.push(`<tr>
-                            <td>${i++}</td>
-                            <td>${escapeHtml(r.name || '')}</td>
-                            <td>${r.score}</td>
-                            <td>${r.correct}</td>
-                        </tr>`);
-                    });
-
-                    if (statusEl) statusEl.style.display = 'none';
-                    if (tableEl) tableEl.style.display = 'table';
-                    if (bodyEl) {
-                        bodyEl.innerHTML = rows.length
-                            ? rows.join('')
-                            : '<tr><td colspan="4" style="text-align:center;">Nenhum resultado ainda.</td></tr>';
-                    }
-                },
-                err => {
-                    console.error('Erro ao carregar ranking:', err);
-                    const statusEl = document.getElementById('ranking-status');
-                    if (statusEl) {
-                        statusEl.style.color = '#ef4444';
-                        statusEl.innerText = 'Erro ao carregar ranking. Verifique as regras do Firestore.';
-                    }
-                }
-            );
-    } catch (err) {
-        console.error('Erro ao configurar listener do ranking:', err);
+            .onSnapshot(function (snapshot) {
+                var statusEl = document.getElementById('ranking-status');
+                var tableEl  = document.getElementById('ranking-table');
+                var bodyEl   = document.getElementById('ranking-body');
+                if (!bodyEl) return;
+                var rows = [];
+                var pos = 1;
+                snapshot.forEach(function (doc) {
+                    var r = doc.data();
+                    rows.push('<tr><td>' + pos++ + '</td><td>' + escapeHtml(r.name || '') +
+                        '</td><td>' + r.score + '</td><td>' + r.correct + '</td></tr>');
+                });
+                if (statusEl) statusEl.style.display = 'none';
+                if (tableEl)  tableEl.style.display = 'table';
+                if (bodyEl)   bodyEl.innerHTML = rows.length
+                    ? rows.join('')
+                    : '<tr><td colspan="4" style="text-align:center;">Nenhum resultado ainda.</td></tr>';
+            }, function (e) {
+                console.error('Erro ao carregar ranking:', e);
+                var statusEl = document.getElementById('ranking-status');
+                if (statusEl) { statusEl.style.color = '#ef4444'; statusEl.innerText = 'Erro ao carregar ranking. Verifique as regras do Firestore.'; }
+            });
+    } catch (e) {
+        console.error('Erro ao configurar listener do ranking:', e);
     }
 }
 
+// ── Expõe funções ao escopo global via quizApp ─────────────
+window.quizApp = {
+    goHome:           goHome,
+    startName:        startName,
+    submitName:       submitName,
+    selectOption:     selectOption,
+    nextQuestion:     nextQuestion,
+    showRankingLogin: showRankingLogin,
+    submitPassword:   submitPassword
+};
+
 // ── Ponto de entrada ───────────────────────────────────────
-// Usa DOMContentLoaded + window.onload como fallback duplo
-// para garantir compatibilidade com todos os navegadores.
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initAppSafe);
 } else {
-    // DOM já está pronto (script carregado com defer ou no fim do body)
     initAppSafe();
 }
+
+})(); // fim do IIFE
