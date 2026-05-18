@@ -139,6 +139,27 @@ const difficulties = {
 
 const PASSWORD = '140159';
 
+// ── Embaralhamento (Fisher-Yates) ─────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Gera cópia embaralhada: ordem das questões e posição das alternativas
+function prepareQuestions() {
+  const shuffledQuestions = shuffle(questions);
+  return shuffledQuestions.map(q => {
+    const correctText = q.options[q.answer];
+    const shuffledOptions = shuffle(q.options);
+    const newAnswer = shuffledOptions.indexOf(correctText);
+    return { ...q, options: shuffledOptions, answer: newAnswer };
+  });
+}
+
 // ── Firebase ──────────────────────────────────────────────
 let _db = null;
 let _firebaseError = null;
@@ -158,6 +179,8 @@ function initFirebaseSafe() {
 }
 
 // ── Estado ────────────────────────────────────────────────
+let activeQuestions = [];
+
 let state = {
   screen:   'home',
   name:     '',
@@ -186,7 +209,7 @@ function getPerformanceMsg(score) {
   if (score >= maxScore * 0.6) return '👍 Bom desempenho! Com um pouco mais de estudo, você chega lá.';
   if (score >= maxScore * 0.4) return '📚 Regular. Revise o conteúdo sobre Síndrome de Turner e tente novamente.';
   if (score >= maxScore * 0.2) return '😕 Fraco. Você precisa estudar mais esse tema. Não desista!';
-  return '❌ Resultado muito baixo. Coisa ta feita para você. Estude bastante e tente novamente!';
+  return '❌ Resultado muito baixo. Releia o material com calma e tente de novo!';
 }
 
 // ── Render principal ──────────────────────────────────────
@@ -268,6 +291,7 @@ function submitName() {
   state.score   = 0;
   state.correct = 0;
   state.finished = false;
+  activeQuestions = prepareQuestions();
   render();
 }
 
@@ -275,9 +299,9 @@ function submitName() {
 function renderQuiz() {
   const app = getContainer();
   if (!app) return;
-  const q        = questions[state.current];
+  const q        = activeQuestions[state.current];
   const diff     = difficulties[q.difficulty];
-  const progress = (state.current / questions.length) * 100;
+  const progress = (state.current / activeQuestions.length) * 100;
 
   let optionsHtml = '';
   q.options.forEach((opt, i) => {
@@ -287,7 +311,7 @@ function renderQuiz() {
   app.innerHTML = `
     <div class="progress-bar"><div class="progress" style="width:${progress}%;"></div></div>
     <div style="font-size:0.82rem;color:#94a3b8;margin-bottom:10px;text-align:right;">
-      Questão ${state.current + 1} de ${questions.length}
+      Questão ${state.current + 1} de ${activeQuestions.length}
     </div>
     <div class="question">${q.text}</div>
     <div class="${diff.cls}">${diff.label} · ${q.points} pt${q.points !== 1 ? 's' : ''}</div>
@@ -302,7 +326,7 @@ function renderQuiz() {
 }
 
 function selectOption(idx) {
-  const q       = questions[state.current];
+  const q       = activeQuestions[state.current];
   const options = document.querySelectorAll('.option');
 
   options.forEach(el => {
@@ -341,7 +365,7 @@ function showFeedback(msg) {
 
 function nextQuestion() {
   state.current++;
-  if (state.current >= questions.length) {
+  if (state.current >= activeQuestions.length) {
     state.finished = true;
     state.screen   = 'result';
   }
@@ -361,7 +385,7 @@ function renderResult() {
     <div class="result">
       <div><b>Nome:</b> ${escapeHtml(state.name)}</div>
       <div class="score">${scoreRound} <span style="font-size:1.2rem;font-weight:600;color:#6366f1;">/ ${maxScore}</span></div>
-      <div><b>Acertos:</b> ${state.correct} de ${questions.length}</div>
+      <div><b>Acertos:</b> ${state.correct} de ${activeQuestions.length}</div>
       <div class="performance">${performance}</div>
       <button class="btn" id="btnHome">Voltar ao Início</button>
     </div>
