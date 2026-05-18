@@ -15,7 +15,6 @@ import { getFirestore,
          serverTimestamp }        from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
 // ── Configuração Firebase ─────────────────────────────────
-// Substitua os valores abaixo pelos do seu projeto se mudar.
 const firebaseConfig = {
   apiKey:            "AIzaSyBNb5eOXQyGJEImUmFdTf1CDMrSvjo5Cr8",
   authDomain:        "trabalho-faculdade-85d9f.firebaseapp.com",
@@ -27,56 +26,108 @@ const firebaseConfig = {
 };
 
 // ── Dados do quiz ─────────────────────────────────────────
+// Fáceis: 4 × 1 pt = 4 pts
+// Médias: 4 × 1,5 pts = 6 pts
+// Difíceis: 2 × 3 pts = 6 pts
+// Total: 16 pts
 const questions = [
+  // ── Fáceis ────────────────────────────────────────────
   {
-    text:        'Qual é o cariótipo característico da Síndrome de Turner?',
-    options:     ['47,XXY', '45,X', '46,XY', '46,XX'],
+    text:        'Qual alteração cromossômica acontece na Síndrome de Turner?',
+    options:     ['47,XXY', '45,X', '46,XY', '47,XXX'],
     answer:      1,
     difficulty:  'easy',
     points:      1,
-    explanation: 'O cariótipo típico é 45,X (ausência de um cromossomo X).'
+    explanation: 'O cariótipo 45,X indica que há apenas um cromossomo X, em vez dos dois habituais. Essa é a alteração típica da Síndrome de Turner.'
   },
   {
-    text:        'Qual é a principal característica física da Síndrome de Turner?',
-    options:     ['Alta estatura', 'Baixa estatura', 'Obesidade severa', 'Macrocefalia'],
-    answer:      1,
+    text:        'A Síndrome de Turner afeta principalmente:',
+    options:     ['Apenas homens', 'Homens e mulheres igualmente', 'Apenas meninas e mulheres', 'Apenas recém-nascidos'],
+    answer:      2,
     difficulty:  'easy',
     points:      1,
-    explanation: 'A baixa estatura é uma das principais características físicas.'
+    explanation: 'A Síndrome de Turner afeta exclusivamente meninas e mulheres, pois envolve a ausência ou alteração de um dos cromossomos X.'
   },
   {
-    text:    'O que é mosaicismo na Síndrome de Turner?',
-    options: [
-      'Presença de dois tipos de tecidos com diferentes cariótipos',
-      'Mutação apenas no cromossomo Y',
-      'Alteração apenas hormonal',
-      'Infecção genética adquirida'
+    text:        'Qual destas características físicas é comum na Síndrome de Turner?',
+    options:     ['Baixa estatura', 'Crescimento excessivo', 'Mãos gigantes', 'Ausência de cabelos'],
+    answer:      0,
+    difficulty:  'easy',
+    points:      1,
+    explanation: 'A baixa estatura é uma das características mais marcantes, causada pela deficiência do hormônio do crescimento e pela ausência do segundo cromossomo X.'
+  },
+  {
+    text:        'Qual exame é considerado o principal para confirmar o diagnóstico da Síndrome de Turner?',
+    options:     ['Raio-X', 'Exame de sangue comum', 'Cariótipo', 'Ultrassom abdominal'],
+    answer:      2,
+    difficulty:  'easy',
+    points:      1,
+    explanation: 'O cariótipo analisa o número e a estrutura dos cromossomos e é o exame definitivo para confirmar a Síndrome de Turner.'
+  },
+  // ── Médias ────────────────────────────────────────────
+  {
+    text:        'O que significa o mosaicismo na Síndrome de Turner?',
+    options:     [
+      'Todas as células possuem alteração genética',
+      'Algumas células possuem alteração e outras não',
+      'A pessoa possui três cromossomos X',
+      'Não existe alteração cromossômica'
     ],
+    answer:      1,
+    difficulty:  'medium',
+    points:      1.5,
+    explanation: 'No mosaicismo, o organismo possui dois tipos de células: algumas com cariótipo 45,X e outras com cariótipo normal (46,XX). Isso pode tornar os sintomas mais leves.'
+  },
+  {
+    text:        'Qual problema de saúde pode estar associado à Síndrome de Turner?',
+    options:     ['Diabetes tipo 2', 'Catarata congênita', 'Alzheimer', 'Pneumonia crônica'],
     answer:      0,
     difficulty:  'medium',
     points:      1.5,
-    explanation: 'Mosaicismo é a presença de dois ou mais tipos celulares com cariótipos diferentes.'
+    explanation: 'O diabetes tipo 2 é uma complicação metabólica associada à síndrome, assim como doenças cardíacas (ex: coarctação da aorta) e alterações na tireoide.'
   },
   {
-    text:        'Qual problema pode estar associado à Síndrome de Turner?',
-    options:     ['Asma', 'Coarctação da aorta', 'Hepatite', 'Catarata infecciosa'],
+    text:        'O hormônio do crescimento (GH) é utilizado principalmente para:',
+    options:     ['Melhorar a visão', 'Aumentar a altura da paciente', 'Corrigir problemas cardíacos', 'Evitar o diabetes'],
     answer:      1,
     difficulty:  'medium',
     points:      1.5,
-    explanation: 'Coarctação da aorta é uma cardiopatia congênita comum na síndrome.'
+    explanation: 'O GH é iniciado precocemente para estimular o crescimento ósseo e aumentar a estatura final das pacientes com Síndrome de Turner.'
   },
   {
-    text:    'Sobre o tratamento hormonal na Síndrome de Turner:',
-    options: [
-      'Estrogênio deve vir antes do GH',
-      'GH e estrogênio devem começar juntos na infância',
-      'GH deve ser iniciado cedo e estrogênio apenas na adolescência',
-      'Nenhum hormônio é usado'
+    text:        'A puberdade atrasada em meninas com Síndrome de Turner ocorre principalmente devido ao:',
+    options:     ['Hipogonadismo', 'Excesso de cálcio', 'Problema pulmonar', 'Aumento dos glóbulos vermelhos'],
+    answer:      0,
+    difficulty:  'medium',
+    points:      1.5,
+    explanation: 'O hipogonadismo (falência dos ovários) impede a produção adequada de estrogênio, resultando em puberdade atrasada ou ausente. Por isso, a reposição de estrogênio é necessária.'
+  },
+  // ── Difíceis ──────────────────────────────────────────
+  {
+    text:        'Sobre a Síndrome de Turner, assinale a alternativa correta:',
+    options:     [
+      'Está diretamente relacionada à idade materna avançada',
+      'Afeta homens e mulheres igualmente',
+      'Resulta da perda total ou parcial de um cromossomo X',
+      'Sempre é diagnosticada antes do nascimento'
     ],
     answer:      2,
     difficulty:  'hard',
     points:      3,
-    explanation: 'O GH é iniciado cedo para crescimento e o estrogênio apenas na adolescência.'
+    explanation: 'A síndrome resulta da perda total (45,X) ou parcial de um cromossomo X. Não está relacionada à idade materna e nem sempre é diagnosticada antes do nascimento — muitos casos só aparecem na adolescência.'
+  },
+  {
+    text:        'O acompanhamento multidisciplinar na Síndrome de Turner é importante porque a paciente pode apresentar alterações em diferentes sistemas do organismo, principalmente:',
+    options:     [
+      'Digestório e muscular',
+      'Cardíaco, endócrino e reprodutivo',
+      'Nervoso e auditivo apenas',
+      'Respiratório e imunológico exclusivamente'
+    ],
+    answer:      1,
+    difficulty:  'hard',
+    points:      3,
+    explanation: 'As pacientes precisam de acompanhamento cardiológico (coarctação da aorta), endocrinológico (GH e tireoide) e ginecológico (função reprodutiva e puberdade), além de outras especialidades.'
   }
 ];
 
@@ -89,10 +140,8 @@ const difficulties = {
 const PASSWORD = '140159';
 
 // ── Firebase ──────────────────────────────────────────────
-// Como este arquivo é type="module", cada variável aqui é
-// local ao módulo — sem nenhum conflito com outros scripts.
 let _db = null;
-let _firebaseError = null; // armazena o erro real para exibir na tela
+let _firebaseError = null;
 let _unsubRanking = null;
 
 function initFirebaseSafe() {
@@ -125,9 +174,19 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Renomeado para não conflitar com getApp() importado do Firebase
 function getContainer() {
   return document.getElementById('app');
+}
+
+// ── Mensagem de desempenho (total = 16 pts) ───────────────
+function getPerformanceMsg(score) {
+  const maxScore = questions.reduce((s, q) => s + q.points, 0);
+  if (score >= maxScore)      return '🏆 Nota 10! Você domina completamente o tema. Parabéns!';
+  if (score >= maxScore * 0.8) return '🌟 Excelente! Você tem ótimo conhecimento sobre a Síndrome de Turner.';
+  if (score >= maxScore * 0.6) return '👍 Bom desempenho! Com um pouco mais de estudo, você chega lá.';
+  if (score >= maxScore * 0.4) return '📚 Regular. Revise o conteúdo sobre Síndrome de Turner e tente novamente.';
+  if (score >= maxScore * 0.2) return '😕 Fraco. Você precisa estudar mais esse tema. Não desista!';
+  return '❌ Resultado muito baixo. Releia o material com calma e tente de novo!';
 }
 
 // ── Render principal ──────────────────────────────────────
@@ -216,8 +275,8 @@ function submitName() {
 function renderQuiz() {
   const app = getContainer();
   if (!app) return;
-  const q       = questions[state.current];
-  const diff    = difficulties[q.difficulty];
+  const q        = questions[state.current];
+  const diff     = difficulties[q.difficulty];
   const progress = (state.current / questions.length) * 100;
 
   let optionsHtml = '';
@@ -227,8 +286,11 @@ function renderQuiz() {
 
   app.innerHTML = `
     <div class="progress-bar"><div class="progress" style="width:${progress}%;"></div></div>
+    <div style="font-size:0.82rem;color:#94a3b8;margin-bottom:10px;text-align:right;">
+      Questão ${state.current + 1} de ${questions.length}
+    </div>
     <div class="question">${q.text}</div>
-    <div class="${diff.cls}">${diff.label}</div>
+    <div class="${diff.cls}">${diff.label} · ${q.points} pt${q.points !== 1 ? 's' : ''}</div>
     <div class="options">${optionsHtml}</div>
     <button class="btn" id="nextBtn" style="display:none;margin-top:10px;">Próxima</button>
   `;
@@ -244,7 +306,7 @@ function selectOption(idx) {
   const options = document.querySelectorAll('.option');
 
   options.forEach(el => {
-    el.replaceWith(el.cloneNode(true)); // remove todos os listeners
+    el.replaceWith(el.cloneNode(true));
   });
 
   const freshOptions = document.querySelectorAll('.option');
@@ -290,19 +352,15 @@ function nextQuestion() {
 function renderResult() {
   const app = getContainer();
   if (!app) return;
-  const maxScore = questions.reduce((s, q) => s + q.points, 0);
-  const percent  = Math.round((state.score / maxScore) * 100);
-  let performance = '';
-  if (state.score >= maxScore) performance = 'Excelente! Você acertou tudo!';
-  else if (percent >= 75)      performance = 'Ótimo desempenho!';
-  else if (percent >= 50)      performance = 'Bom, mas pode melhorar.';
-  else                         performance = 'Até tentou, mas o resultado final foi TRISTE.';
+  const maxScore   = questions.reduce((s, q) => s + q.points, 0);
+  const performance = getPerformanceMsg(state.score);
+  const scoreRound  = Math.round(state.score * 10) / 10;
 
   app.innerHTML = `
     <div class="title">Resultado Final</div>
     <div class="result">
       <div><b>Nome:</b> ${escapeHtml(state.name)}</div>
-      <div class="score">${state.score} pontos</div>
+      <div class="score">${scoreRound} <span style="font-size:1.2rem;font-weight:600;color:#6366f1;">/ ${maxScore}</span></div>
       <div><b>Acertos:</b> ${state.correct} de ${questions.length}</div>
       <div class="performance">${performance}</div>
       <button class="btn" id="btnHome">Voltar ao Início</button>
@@ -425,7 +483,6 @@ function renderRanking() {
   if (_unsubRanking) { _unsubRanking(); _unsubRanking = null; }
 
   try {
-    // Ordenação só por score — não precisa de índice composto
     const q = query(
       collection(_db, 'turner_ranking'),
       orderBy('score', 'desc')
@@ -437,7 +494,6 @@ function renderRanking() {
         const bodyEl   = document.getElementById('ranking-body');
         if (!bodyEl) return;
 
-        // Ordena client-side por score desc, correct desc
         const docs = [];
         snapshot.forEach(doc => docs.push(doc.data()));
         docs.sort((a, b) => b.score - a.score || b.correct - a.correct);
@@ -494,8 +550,6 @@ function initAppSafe() {
   }
 }
 
-// Módulo ES tem seu próprio escopo — sem conflito com nada.
-// Inicia quando o DOM estiver pronto.
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAppSafe);
 } else {
