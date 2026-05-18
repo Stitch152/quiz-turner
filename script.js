@@ -186,7 +186,7 @@ function getPerformanceMsg(score) {
   if (score >= maxScore * 0.6) return '👍 Bom desempenho! Com um pouco mais de estudo, você chega lá.';
   if (score >= maxScore * 0.4) return '📚 Regular. Revise o conteúdo sobre Síndrome de Turner e tente novamente.';
   if (score >= maxScore * 0.2) return '😕 Fraco. Você precisa estudar mais esse tema. Não desista!';
-  return '❌ Resultado muito baixo. Releia o material com calma e tente de novo!';
+  return '❌ Resultado muito baixo. Coisa ta feita para você. Estude bastante e tente novamente!';
 }
 
 // ── Render principal ──────────────────────────────────────
